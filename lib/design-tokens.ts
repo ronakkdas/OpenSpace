@@ -1,0 +1,15 @@
+export const tokens = {
+  bg: '#0D0B08',
+  surface: '#131109',
+  surfaceElevated: '#181510',
+  border: 'rgba(255,255,255,0.08)',
+  borderHover: 'rgba(255,255,255,0.14)',
+  text1: '#F0EAD6',
+  text2: 'rgba(240,234,214,0.55)',
+  text3: 'rgba(240,234,214,0.3)',
+  gold: '#C8923A',
+  goldDim: 'rgba(200,146,58,0.18)',
+  green: '#4A7C59',
+  amber: '#E8A838',
+  red: '#C0392B',
+} as const

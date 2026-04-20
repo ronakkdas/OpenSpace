@@ -1,0 +1,47 @@
+# --- Ignore EVERYTHING in home by default ---
+/*
+
+# --- Whitelist OpenSpace project files ---
+!/.gitignore
+!/.gitattributes
+!/README.md
+!/STRIPE_SETUP.md
+!/package.json
+!/package-lock.json
+!/next.config.mjs
+!/next-env.d.ts
+!/tsconfig.json
+!/postcss.config.mjs
+!/tailwind.config.ts
+!/middleware.ts
+
+# --- Whitelist project directories ---
+!/app
+!/components
+!/lib
+!/hooks
+!/actions
+!/supabase
+
+# --- Ignore the usual suspects INSIDE the whitelisted dirs ---
+.next/
+node_modules/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+
+# Stray shell config that accidentally landed in app/
+/app/.bash_profile
+
