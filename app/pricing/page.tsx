@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server'
 import PricingClient from './PricingClient'
+import { getProPrice } from '@/lib/stripe-price'
 
 export default async function PricingPage() {
   const supabase = await createServerClient()
@@ -18,5 +19,7 @@ export default async function PricingPage() {
     isPro = profile?.is_pro ?? false
   }
 
-  return <PricingClient role={role} isPro={isPro} isLoggedIn={!!user} />
+  const price = await getProPrice()
+
+  return <PricingClient role={role} isPro={isPro} isLoggedIn={!!user} price={price} />
 }

@@ -36,9 +36,12 @@ interface Props {
   role: 'student' | 'business' | null
   isPro: boolean
   isLoggedIn: boolean
+  price: { amount: number; interval: string; label: string; configured: boolean }
 }
 
-export default function PricingClient({ role, isPro, isLoggedIn }: Props) {
+export default function PricingClient({ role, isPro, isLoggedIn, price }: Props) {
+  const intervalShort = price.interval === 'month' ? 'mo' : price.interval === 'year' ? 'yr' : price.interval
+  const amountDisplay = price.amount % 1 === 0 ? `$${price.amount}` : `$${price.amount.toFixed(2)}`
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
   const router = useRouter()
@@ -118,7 +121,7 @@ export default function PricingClient({ role, isPro, isLoggedIn }: Props) {
           {/* Pro */}
           <div style={{ flex: 1, paddingLeft: 60, borderLeft: '1px solid var(--gold)', marginLeft: -1 }}>
             <p style={{ fontSize: 11, letterSpacing: '3px', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 10 }}>PRO</p>
-            <p style={{ fontFamily: '"DM Serif Display",serif', fontSize: 52, color: 'var(--text-1)', margin: '0 0 6px' }}>$2<span style={{ fontSize: 18, color: 'var(--text-2)', fontFamily: '"DM Sans",sans-serif' }}>/mo</span></p>
+            <p style={{ fontFamily: '"DM Serif Display",serif', fontSize: 52, color: 'var(--text-1)', margin: '0 0 6px' }}>{amountDisplay}<span style={{ fontSize: 18, color: 'var(--text-2)', fontFamily: '"DM Sans",sans-serif' }}>/{intervalShort}</span></p>
             <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.7, marginBottom: 20 }}>Full real-time access for serious students.</p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px' }}>
               {PRO_FEATURES.map(f => (
@@ -134,7 +137,7 @@ export default function PricingClient({ role, isPro, isLoggedIn }: Props) {
               </span>
             ) : (
               <button onClick={handleCheckout} disabled={isPending} style={{ padding: '11px 26px', borderRadius: 24, background: 'var(--gold)', border: 'none', color: '#2c1a0e', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: isPending ? 0.7 : 1, fontFamily: '"DM Sans",sans-serif' }}>
-                {isPending ? 'Redirecting…' : isLoggedIn ? 'Subscribe — $2/mo' : 'Sign Up & Subscribe'}
+                {isPending ? 'Redirecting…' : isLoggedIn ? `Subscribe — ${price.label}` : 'Sign Up & Subscribe'}
               </button>
             )}
           </div>
