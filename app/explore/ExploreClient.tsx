@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { VenueCard } from '@/components/explore/VenueCard'
 import type { VenueCardVenue } from '@/components/explore/VenueCard'
@@ -19,10 +20,31 @@ interface ExploreClientProps {
 }
 
 export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreClientProps) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
   const [filter, setFilter] = useState<Filter>('all')
-  const [view, setView] = useState<View>('list')
+  const [view, setView] = useState<View>(searchParams.get('view') === 'map' ? 'map' : 'list')
   const [search, setSearch] = useState('')
   const { location } = useUserLocation()
+
+  // Sync view ↔ URL so the BottomNav's /explore?view=map link works
+  // and share links preserve state.
+  useEffect(() => {
+    const urlView = searchParams.get('view') === 'map' ? 'map' : 'list'
+    if (urlView !== view) setView(urlView)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  const setViewAndUrl = (v: View) => {
+    setView(v)
+    const params = new URLSearchParams(searchParams.toString())
+    if (v === 'map') params.set('view', 'map')
+    else params.delete('view')
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
 
   const filtered = useMemo(() => {
     let vs = venues
@@ -45,6 +67,11 @@ export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreCli
   const userLat = location?.lat ?? BERKELEY.lat
   const userLng = location?.lng ?? BERKELEY.lng
 
+  // For map view: only venues with coords can be pinned. Track the gap so
+  // we can tell the user "3 of your 5 venues don't have a pinned address yet."
+  const mappable = useMemo(() => filtered.filter(v => v.lat != null && v.lng != null), [filtered])
+  const missingCoords = filtered.length - mappable.length
+
   const chips: { key: Filter; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'cafe', label: 'Cafes' },
@@ -61,7 +88,7 @@ export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreCli
           <h1 style={{ fontFamily: '"DM Serif Display",serif', fontSize: 'clamp(28px,4vw,44px)', color: 'var(--text-1)', margin: 0 }}>Find your seat.</h1>
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
             {(['list','map'] as View[]).map(v => (
-              <button key={v} onClick={() => setView(v)} style={{ padding: '8px 18px', background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === v ? 'var(--text-1)' : 'var(--text-3)', border: 'none', fontSize: 12, cursor: 'pointer', fontFamily: '"DM Sans",sans-serif', textTransform: 'capitalize' }}>
+              <button key={v} onClick={() => setViewAndUrl(v)} style={{ padding: '8px 18px', background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === v ? 'var(--text-1)' : 'var(--text-3)', border: 'none', fontSize: 12, cursor: 'pointer', fontFamily: '"DM Sans",sans-serif', textTransform: 'capitalize' }}>
                 {v === 'list' ? 'List' : 'Map'}
               </button>
             ))}
@@ -97,8 +124,15 @@ export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreCli
           </div>
         </div>
       ) : (
-        <div style={{ height: 'calc(100vh - 180px)', margin: '0 24px' }}>
-          <MapView venues={filtered} userLat={userLat} userLng={userLng} />
+        <div style={{ padding: '0 16px 24px' }}>
+          {missingCoords > 0 && (
+            <div style={{ maxWidth: 860, margin: '0 auto 12px', padding: '10px 14px', background: 'rgba(200,146,58,0.08)', border: '1px solid rgba(200,146,58,0.25)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)' }}>
+              Showing {mappable.length} of {filtered.length} spots on the map — {missingCoords} {missingCoords === 1 ? 'venue is' : 'venues are'} missing a pinned address.
+            </div>
+          )}
+          <div style={{ height: 'calc(100vh - 240px)', minHeight: 420, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
+            <MapView venues={mappable} userLat={userLat} userLng={userLng} />
+          </div>
         </div>
       )}
     </main>

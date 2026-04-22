@@ -1,6 +1,7 @@
 'use server'
 import { createServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { geocodeAddress } from '@/lib/geocode'
 
 export async function createVenue(fields: {
   name: string
@@ -20,17 +21,33 @@ export async function createVenue(fields: {
   if (!fields.name?.trim()) return { error: 'Venue name is required' }
 
   // Normalize: turn empty optional strings into null so Postgres stores NULL, not ''.
+  const address = fields.address?.trim() || null
+
+  // Geocode the address so the venue shows up on the map.
+  // Falls back silently to no coords if the service is down or address is empty.
+  let lat: number | null = null
+  let lng: number | null = null
+  if (address) {
+    const result = await geocodeAddress(address)
+    if (result) {
+      lat = result.lat
+      lng = result.lng
+    }
+  }
+
   const payload = {
     owner_id: user.id,
     name: fields.name.trim(),
     type: fields.type || 'cafe',
     description: fields.description?.trim() ? fields.description.trim() : null,
-    address: fields.address?.trim() ? fields.address.trim() : null,
+    address,
     website_url: fields.website_url?.trim() ? fields.website_url.trim() : null,
     max_capacity: fields.max_capacity ?? 40,
     hours_open: fields.hours_open ?? '07:00',
     hours_close: fields.hours_close ?? '22:00',
     popular_items: (fields.popular_items ?? []).filter(Boolean),
+    lat,
+    lng,
   }
 
   const { data, error } = await supabase
@@ -76,7 +93,17 @@ export async function updateVenue(
 
   if (!venue || venue.owner_id !== user.id) return { error: 'Not authorized' }
 
-  const { error } = await supabase.from('venues').update(fields).eq('id', venueId)
+  // If the address changed and caller didn't supply explicit lat/lng, geocode it.
+  const patch: Record<string, unknown> = { ...fields }
+  if (typeof fields.address === 'string' && fields.address.trim() && fields.lat === undefined && fields.lng === undefined) {
+    const result = await geocodeAddress(fields.address)
+    if (result) {
+      patch.lat = result.lat
+      patch.lng = result.lng
+    }
+  }
+
+  const { error } = await supabase.from('venues').update(patch).eq('id', venueId)
   if (error) return { error: error.message }
 
   if (amenities !== undefined) {
