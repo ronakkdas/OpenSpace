@@ -1,9 +1,14 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 export function BottomNav() {
   const pathname = usePathname()
+  // Use the Next hook instead of reading window.location — otherwise the
+  // server renders one "active" tab and the client re-renders another,
+  // triggering the hydration mismatch warning.
+  const searchParams = useSearchParams()
+  const isMapView = searchParams.get('view') === 'map'
   const tabs = [
     { href: '/explore', label: 'Explore', icon: '⊞' },
     { href: '/explore?view=map', label: 'Map', icon: '◎' },
@@ -13,8 +18,10 @@ export function BottomNav() {
   return (
     <nav className="bottom-nav">
       {tabs.map(tab => {
-        const active = pathname === tab.href.split('?')[0] && !tab.href.includes('view=map')
-          || (tab.href.includes('view=map') && pathname === '/explore' && typeof window !== 'undefined' && window.location.search.includes('view=map'))
+        const isMapTab = tab.href.includes('view=map')
+        const active = isMapTab
+          ? pathname === '/explore' && isMapView
+          : pathname === tab.href.split('?')[0] && !(tab.href === '/explore' && isMapView)
         return (
           <Link key={tab.href} href={tab.href} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
