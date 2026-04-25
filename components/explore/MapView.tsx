@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -29,6 +29,13 @@ interface MapViewProps {
 }
 
 export default function MapView({ venues, userLat, userLng }: MapViewProps) {
+  // React 18 strict mode mounts effects twice. The first MapContainer init
+  // tags the div with `_leaflet_id`; the second tries to init the same node
+  // and Leaflet throws "Map container is already initialized." Generating a
+  // unique key per logical mount forces React to give us a fresh div each
+  // time, sidestepping the stale id.
+  const [mountKey] = useState(() => `map-${Math.random().toString(36).slice(2)}`)
+
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -40,7 +47,7 @@ export default function MapView({ venues, userLat, userLng }: MapViewProps) {
   }, [])
 
   return (
-    <MapContainer center={[userLat, userLng]} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl>
+    <MapContainer key={mountKey} center={[userLat, userLng]} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OSM' />
       <RecenterOnUser lat={userLat} lng={userLng} />
       <Marker position={[userLat, userLng]} icon={makeUserIcon()} />
