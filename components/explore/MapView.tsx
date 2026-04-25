@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -29,12 +29,14 @@ interface MapViewProps {
 }
 
 export default function MapView({ venues, userLat, userLng }: MapViewProps) {
-  // React 18 strict mode mounts effects twice. The first MapContainer init
-  // tags the div with `_leaflet_id`; the second tries to init the same node
-  // and Leaflet throws "Map container is already initialized." Generating a
-  // unique key per logical mount forces React to give us a fresh div each
-  // time, sidestepping the stale id.
+  // React 18 strict mode mounts effects twice in dev. The first MapContainer
+  // init tags the div with `_leaflet_id`; the second sees that and throws
+  // "Map container is already initialized." Two-pronged defense:
+  //   1. Unique key per logical mount so React gives us a fresh div.
+  //   2. Capture the L.Map instance and call .remove() on unmount, which
+  //      clears the leaflet id off the underlying DOM node.
   const [mountKey] = useState(() => `map-${Math.random().toString(36).slice(2)}`)
+  const mapRef = useRef<L.Map | null>(null)
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,10 +46,23 @@ export default function MapView({ venues, userLat, userLng }: MapViewProps) {
       iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
       shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
     })
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
   }, [])
 
   return (
-    <MapContainer key={mountKey} center={[userLat, userLng]} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl>
+    <MapContainer
+      key={mountKey}
+      center={[userLat, userLng]}
+      zoom={15}
+      style={{ height: '100%', width: '100%' }}
+      zoomControl
+      ref={(instance) => { mapRef.current = instance }}
+    >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OSM' />
       <RecenterOnUser lat={userLat} lng={userLng} />
       <Marker position={[userLat, userLng]} icon={makeUserIcon()} />
