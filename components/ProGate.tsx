@@ -1,4 +1,5 @@
-import Link from 'next/link'
+'use client'
+import { useRouter } from 'next/navigation'
 import { ReactNode } from 'react'
 
 interface ProGateProps {
@@ -7,7 +8,19 @@ interface ProGateProps {
 }
 
 export function ProGate({ isPro, children }: ProGateProps) {
+  const router = useRouter()
   if (isPro) return <>{children}</>
+
+  // VenueCard wraps the whole card in <Link>, so we can't nest another <a>
+  // here (HTML doesn't allow <a> inside <a> — React warns and hydration breaks).
+  // Use a button + router.push, and stopPropagation so clicking "Unlock"
+  // doesn't also trigger the outer card link.
+  const goPricing = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    router.push('/pricing')
+  }
+
   return (
     <div style={{ position: 'relative', display: 'block' }}>
       <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
@@ -21,14 +34,15 @@ export function ProGate({ isPro, children }: ProGateProps) {
         backdropFilter: 'blur(2px)',
       }}>
         <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>Pro feature</p>
-        <Link href="/pricing" style={{
+        <button onClick={goPricing} style={{
           fontSize: 13, fontWeight: 600, color: 'var(--gold)',
-          textDecoration: 'none', padding: '8px 20px',
+          padding: '8px 20px',
           border: '1px solid var(--gold)', borderRadius: 20,
           background: 'var(--gold-dim)',
+          cursor: 'pointer', fontFamily: 'inherit',
         }}>
           Unlock for $2/mo →
-        </Link>
+        </button>
       </div>
     </div>
   )
