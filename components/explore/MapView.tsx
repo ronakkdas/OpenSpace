@@ -38,6 +38,23 @@ export default function MapView({ venues, userLat, userLng }: MapViewProps) {
   const [mountKey] = useState(() => `map-${Math.random().toString(36).slice(2)}`)
   const mapRef = useRef<L.Map | null>(null)
 
+  // Pick a tile style that matches the app's theme. We use CartoDB's free
+  // raster tiles — Dark Matter for dark mode, Positron for light. Both are
+  // attribution-required but no API key.
+  const [tiles, setTiles] = useState({
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OSM &copy; CARTO',
+  })
+  useEffect(() => {
+    const theme = document.documentElement.dataset.theme
+    if (theme === 'light') {
+      setTiles({
+        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        attribution: '&copy; OSM &copy; CARTO',
+      })
+    }
+  }, [])
+
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -63,7 +80,7 @@ export default function MapView({ venues, userLat, userLng }: MapViewProps) {
       zoomControl
       ref={(instance) => { mapRef.current = instance }}
     >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OSM' />
+      <TileLayer url={tiles.url} attribution={tiles.attribution} />
       <RecenterOnUser lat={userLat} lng={userLng} />
       <Marker position={[userLat, userLng]} icon={makeUserIcon()} />
       {venues.filter(v => v.lat && v.lng).map(venue => {
