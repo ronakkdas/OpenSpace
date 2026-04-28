@@ -15,6 +15,7 @@ export function DashboardSidebar({ venueName, isActive, ownerName }: DashboardSi
     { href: '/dashboard/analytics', label: 'Analytics', icon: '↗' },
     { href: '/dashboard/settings', label: 'Venue Settings', icon: '⚙' },
     { href: '/dashboard/reviews', label: 'Reviews', icon: '★' },
+    { href: '/dashboard/cv-model', label: 'Computer Vision', icon: '◉' },
     { href: '/account', label: 'Subscription', icon: '◎' },
   ]
   return (

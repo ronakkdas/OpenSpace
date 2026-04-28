@@ -26,7 +26,9 @@ export default async function SavedPage() {
         <p style={{ fontSize: 11, letterSpacing: '3px', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 12 }}>YOUR COLLECTION</p>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 36 }}>
           <h1 style={{ fontFamily: '"DM Serif Display",serif', fontSize: 'clamp(28px,4vw,44px)', color: 'var(--text-1)', margin: 0, fontWeight: 400 }}>Saved spots.</h1>
-          <span style={{ fontSize: 13, color: 'var(--text-3)' }}>{venues.length} {venues.length === 1 ? 'spot' : 'spots'}</span>
+          <span style={{ fontSize: 13, color: 'var(--text-3)' }}>
+            {isPro ? `${venues.length} saved` : `${venues.length} of 5 saved`}
+          </span>
         </div>
 
         {venues.length === 0 ? (

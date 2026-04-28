@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AvatarDropdown } from './AvatarDropdown'
+import { AddFriendsButton } from './AddFriendsButton'
 
 interface GlobalNavProps {
   userRole: 'student' | 'business' | null
@@ -48,6 +49,7 @@ export function GlobalNav({ userRole, isPro, userInitials, userEmail, avatarId, 
         {userRole === 'student' && !isPro && (
           <Link href="/pricing" className="nav-upgrade-btn">Upgrade to Pro</Link>
         )}
+        {userRole === 'student' && <AddFriendsButton isPro={isPro} />}
         {userRole && (
           <AvatarDropdown
             initials={userInitials ?? 'U'}
