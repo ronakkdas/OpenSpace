@@ -4,6 +4,8 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { VenueCard } from '@/components/explore/VenueCard'
 import type { VenueCardVenue } from '@/components/explore/VenueCard'
+import { VenueDetailModal } from '@/components/explore/VenueDetailModal'
+import { ProPreviewSection } from '@/components/explore/ProPreviewSection'
 import { useUserLocation } from '@/hooks/useUserLocation'
 import { haversineDistance } from '@/lib/distance'
 import { isVenueOpen } from '@/lib/utils'
@@ -27,10 +29,9 @@ export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreCli
   const [filter, setFilter] = useState<Filter>('all')
   const [view, setView] = useState<View>(searchParams.get('view') === 'map' ? 'map' : 'list')
   const [search, setSearch] = useState('')
+  const [selectedCafe, setSelectedCafe] = useState<VenueCardVenue | null>(null)
   const { location } = useUserLocation()
 
-  // Sync view ↔ URL so the BottomNav's /explore?view=map link works
-  // and share links preserve state.
   useEffect(() => {
     const urlView = searchParams.get('view') === 'map' ? 'map' : 'list'
     if (urlView !== view) setView(urlView)
@@ -67,8 +68,6 @@ export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreCli
   const userLat = location?.lat ?? BERKELEY.lat
   const userLng = location?.lng ?? BERKELEY.lng
 
-  // For map view: only venues with coords can be pinned. Track the gap so
-  // we can tell the user "3 of your 5 venues don't have a pinned address yet."
   const mappable = useMemo(() => filtered.filter(v => v.lat != null && v.lng != null), [filtered])
   const missingCoords = filtered.length - mappable.length
 
@@ -113,7 +112,15 @@ export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreCli
         <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 24px 80px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtered.map(v => (
-              <VenueCard key={v.id} venue={v} isPro={isPro} isFavorited={favoriteIds.includes(v.id)} userLat={userLat} userLng={userLng} />
+              <VenueCard
+                key={v.id}
+                venue={v}
+                isPro={isPro}
+                isFavorited={favoriteIds.includes(v.id)}
+                userLat={userLat}
+                userLng={userLng}
+                onSelect={setSelectedCafe}
+              />
             ))}
             {filtered.length === 0 && (
               <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-3)' }}>
@@ -122,6 +129,9 @@ export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreCli
               </div>
             )}
           </div>
+
+          {/* Pro Preview — only for free users, only in list view */}
+          {!isPro && filtered.length > 0 && <ProPreviewSection />}
         </div>
       ) : (
         <div style={{ padding: '0 16px 24px' }}>
@@ -134,6 +144,15 @@ export default function ExploreClient({ venues, isPro, favoriteIds }: ExploreCli
             <MapView venues={mappable} userLat={userLat} userLng={userLng} />
           </div>
         </div>
+      )}
+
+      {selectedCafe && (
+        <VenueDetailModal
+          venue={selectedCafe}
+          userLat={userLat}
+          userLng={userLng}
+          onClose={() => setSelectedCafe(null)}
+        />
       )}
     </main>
   )

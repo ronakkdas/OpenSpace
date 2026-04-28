@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { createBrowserClient } from '@/lib/supabase/client'
 
 interface DashboardSidebarProps {
   venueName: string
@@ -10,6 +11,7 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ venueName, isActive, ownerName }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '⊞' },
     { href: '/dashboard/analytics', label: 'Analytics', icon: '↗' },
@@ -18,6 +20,14 @@ export function DashboardSidebar({ venueName, isActive, ownerName }: DashboardSi
     { href: '/dashboard/cv-model', label: 'Computer Vision', icon: '◉' },
     { href: '/account', label: 'Subscription', icon: '◎' },
   ]
+
+  const handleSignOut = async () => {
+    const supabase = createBrowserClient()
+    await supabase.auth.signOut()
+    router.push('/')
+    router.refresh()
+  }
+
   return (
     <aside className="dashboard-sidebar" style={{ width: 240, position: 'fixed', top: 0, left: 0, bottom: 0, background: 'var(--surface)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', zIndex: 40, overflowY: 'auto' }}>
       <div style={{ padding: '24px 24px 8px' }}>
@@ -38,13 +48,21 @@ export function DashboardSidebar({ venueName, isActive, ownerName }: DashboardSi
         </nav>
       </div>
       <div style={{ marginTop: 'auto', padding: '20px 24px', borderTop: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? '#4A7C59' : '#C0392B', flexShrink: 0 }} />
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-1)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{venueName}</p>
             <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0 }}>{ownerName}</p>
           </div>
         </div>
+        <button
+          onClick={handleSignOut}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-2)', fontSize: 12, cursor: 'pointer', fontFamily: '"DM Sans",sans-serif', transition: 'all 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#C0392B'; e.currentTarget.style.color = '#C0392B' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-2)' }}
+        >
+          <span style={{ fontSize: 13 }}>⎋</span>Sign out
+        </button>
       </div>
     </aside>
   )
